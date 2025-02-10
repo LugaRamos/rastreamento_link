@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compartilhar Localização</title>
+</head>
+<body>
+    <h1>Capturar Localização</h1>
+    <p id="status">Clique no botão abaixo para compartilhar sua localização.</p>
+    <button onclick="capturarLocalizacao()">Capturar Localização</button>
+    <script>
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        function enviarLocalizacao(latitude, longitude) {
+            const token = getQueryParam("token");
+            if (!token) {
+                alert("Token inválido!");
+                return;
+            }
+
+            fetch("http://localhost/rastreamento/salvar_localizacao.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    token: token,
+                    latitude: latitude,
+                    longitude: longitude
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("status").innerText = "Localização enviada com sucesso!";
+                alert("Localização enviada com sucesso!");
+            })
+            .catch(error => {
+                document.getElementById("status").innerText = "Erro ao enviar localização.";
+                alert("Erro ao enviar localização.");
+                console.error(error);
+            });
+        }
+
+        function capturarLocalizacao() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        document.getElementById("status").innerText = `Localização Capturada: Latitude ${lat}, Longitude ${lon}`;
+                        alert(`Localização Capturada!\nLatitude: ${lat}\nLongitude: ${lon}`);
+                        enviarLocalizacao(lat, lon);
+                    },
+                    (error) => {
+                        let mensagemErro = "";
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                mensagemErro = "Permissão negada. Ative a localização e recarregue a página.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                mensagemErro = "Informação de localização indisponível.";
+                                break;
+                            case error.TIMEOUT:
+                                mensagemErro = "O pedido de localização expirou.";
+                                break;
+                            default:
+                                mensagemErro = "Erro desconhecido ao capturar localização.";
+                        }
+                        document.getElementById("status").innerText = mensagemErro;
+                        alert(mensagemErro);
+                    }
+                );
+            } else {
+                alert("Seu navegador não suporta geolocalização.");
+            }
+        }
+    </script>
+</body>
+</html>
